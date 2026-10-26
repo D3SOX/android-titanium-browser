@@ -169,6 +169,9 @@ sed -i 's|if (id == R.id.manage_all_windows_menu_id) {|if (id == R.id.incognito_
 # hub: new tab button on the right
 sed -n '/<Button$/,/\/>/p' chrome/browser/hub/internal/android/res/layout/hub_toolbar_layout.xml | sed -i -e '/<Button$/,/\/>/d' -e '/<!-- On tablets, the searchbox/r /dev/stdin' chrome/browser/hub/internal/android/res/layout/hub_toolbar_layout.xml
 
+# settings: toggle search box without animation
+sed -i 's|TransitionManager.beginDelayedTransition(parentView, transition);|searchBox.setOnClickListener(v -> onClickSearchBox(v)); updateSearchUiWidth();|' chrome/android/java/src/org/chromium/chrome/browser/settings/search/SettingsSearchCoordinator.java
+
 # crbug.com/406136787: load unpacked
 sed -i 's|assert treeId.equals(documentId);|&\n if ("com.android.externalstorage.documents".equals(mAuthority)) { String fastId = mRelativePath.isEmpty() ? treeId : (treeId.endsWith(":") ? treeId + mRelativePath : treeId + "/" + mRelativePath); Uri fast = DocumentsContract.buildDocumentUriUsingTree(tree, fastId); return contentUriExists(fast) ? fast : null; }|' base/android/java/src/org/chromium/base/VirtualDocumentPath.java
 
