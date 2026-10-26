@@ -138,14 +138,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: apk-*
+          name: apk
           path: release
-          merge-multiple: true
 
       - name: Set
         run: |
           ls -l release
-          test -f release/*-armeabi-v7a.apk && test -f release/*-arm64-v8a.apk && test -f release/*-arm64-v8a.aab
           echo "VERSION=$(find release -name '*-arm64-v8a.apk' | sed 's/.*\///;s/-arm64-v8a.apk$//')" >> "$GITHUB_ENV"
 
       - name: Publish
@@ -166,5 +164,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq '.artifacts[] | select(.name | startswith("apk-") | not) | .id' |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq '.artifacts[] | select(.name != "apk") | .id' |
             xargs -r -I{} gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/{}"

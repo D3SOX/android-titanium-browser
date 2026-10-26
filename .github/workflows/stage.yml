@@ -1,6 +1,6 @@
 name: Build stage
 
-# One time-limited slice of the build per ABI. The build tree is passed to the next stage as an
+# One time-limited slice of the build. The build tree is passed to the next stage as an
 # artifact until the APK is done, so the full build fits into 6-hour GitHub-hosted jobs.
 on:
   workflow_call:
@@ -16,9 +16,6 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 355
-    strategy:
-      matrix:
-        cpu: [arm, arm64]
     steps:
       - name: Check
         id: check
@@ -27,7 +24,7 @@ jobs:
         run: |
           echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
           echo "previous=$((${{ inputs.stage }} - 1))" >> "$GITHUB_OUTPUT"
-          built=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=apk-${{ matrix.cpu }}" --jq .total_count)
+          built=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=apk" --jq .total_count)
           echo "build=$([ "$built" = 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -49,7 +46,7 @@ jobs:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: steps.check.outputs.build == 'true' && inputs.stage > 1
         with:
-          name: out-${{ matrix.cpu }}-${{ steps.check.outputs.previous }}
+          name: out-${{ steps.check.outputs.previous }}
           path: parts/out
 
       - name: Restore
@@ -68,7 +65,7 @@ jobs:
           # Leave time to save the build tree before the job times out.
           limit=$(( (${{ steps.check.outputs.start }} + 295 * 60 - $(date +%s)) / 60 ))
           set +e
-          ./build.sh compile ${{ matrix.cpu }} ${limit}m
+          ./build.sh compile ${limit}m
           status=$?
           set -e
           df -h /
@@ -82,12 +79,12 @@ jobs:
         if: steps.build.outputs.done == 'false'
         run: |
           mkdir state
-          tar --format=posix -C chromium/src -cf - out/${{ matrix.cpu }} | zstd -T0 -3 | split -b 4G -d - state/out.tar.zst.
+          tar --format=posix -C chromium/src -cf - out/Default | zstd -T0 -3 | split -b 4G -d - state/out.tar.zst.
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.build.outputs.done == 'false'
         with:
-          name: out-${{ matrix.cpu }}-${{ inputs.stage }}
+          name: out-${{ inputs.stage }}
           path: state
           compression-level: 0
           retention-days: 3
@@ -102,6 +99,6 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.build.outputs.done == 'true'
         with:
-          name: apk-${{ matrix.cpu }}
+          name: apk
           path: chromium/src/out/release
           retention-days: 3

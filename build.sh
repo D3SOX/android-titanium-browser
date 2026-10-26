@@ -1,6 +1,6 @@
 #!/bin/bash
-# Usage: ./build.sh [prepare | deps | compile <cpu> [time limit] | sign | free_disk]
-# Without arguments, runs the full build for arm and arm64.
+# Usage: ./build.sh [prepare | deps | compile [time limit] | sign | free_disk]
+# Without arguments, runs the full build.
 source common.sh
 export VERSION=$(grep -m1 -o '[0-9]\+\(\.[0-9]\+\)\{3\}' vanadium/args.gn)
 export CHROMIUM_SOURCE=https://chromium.googlesource.com/chromium/src.git # https://github.com/chromium/chromium.git
@@ -47,14 +47,12 @@ prepare() {
 # Exits with 124 if the time limit is reached; running it again resumes the build.
 compile() {
     cd $SCRIPT_DIR/chromium/src
-    if [ ! -f out/$1/args.gn ]; then
-        mkdir -p out/$1
-        sed "s/target_cpu = \"arm\"/target_cpu = \"$1\"/" $SCRIPT_DIR/args.gn > out/$1/args.gn
-        gn gen out/$1 # gn args out/$1; echo 'treat_warnings_as_errors = false' >> out/$1/args.gn
+    if [ ! -f out/Default/args.gn ]; then
+        mkdir -p out/Default
+        cp $SCRIPT_DIR/args.gn out/Default/args.gn
+        gn gen out/Default # gn args out/Default; echo 'treat_warnings_as_errors = false' >> out/Default/args.gn
     fi
-    targets=chrome_public_apk
-    if [ $1 = arm64 ]; then targets="$targets chrome_public_bundle"; fi
-    ${2:+timeout -s INT -k 10m $2} third_party/ninja/ninja -C out/$1 $targets
+    ${1:+timeout -s INT -k 10m $1} third_party/ninja/ninja -C out/Default chrome_public_apk
 }
 
 sign() {
@@ -63,11 +61,7 @@ sign() {
     mkdir -p out/release
     export PATH=$PWD/third_party/jdk/current/bin/:$PATH
     export ANDROID_HOME=$PWD/third_party/android_sdk/public
-    if [ -d out/arm/apks ]; then sign_apk $(find out/arm/apks -name 'Chrome*.apk') out/release/$VERSION-armeabi-v7a.apk; fi
-    if [ -d out/arm64/apks ]; then
-        sign_apk $(find out/arm64/apks -name 'Chrome*.apk') out/release/$VERSION-arm64-v8a.apk
-        sign_aab $(find out/arm64/apks -name 'Chrome*.aab') out/release/$VERSION-arm64-v8a.aab
-    fi
+    sign_apk $(find out/Default/apks -name 'Chrome*.apk') out/release/$VERSION-arm64-v8a.apk
     rm -rf $SCRIPT_DIR/keys
 }
 
@@ -82,6 +76,5 @@ free_disk() {
 
 if [ $# -gt 0 ]; then "$@"; exit; fi
 prepare
-compile arm || exit 1
-compile arm64 || exit 1
+compile || exit 1
 sign
