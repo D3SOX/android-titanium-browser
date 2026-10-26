@@ -1,0 +1,107 @@
+name: Build stage
+
+# One time-limited slice of the build per ABI. The build tree is passed to the next stage as an
+# artifact until the APK is done, so the full build fits into 6-hour GitHub-hosted jobs.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      stage:
+        required: true
+        type: number
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      matrix:
+        cpu: [arm, arm64]
+    steps:
+      - name: Check
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+          echo "previous=$((${{ inputs.stage }} - 1))" >> "$GITHUB_OUTPUT"
+          built=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=apk-${{ matrix.cpu }}" --jq .total_count)
+          echo "build=$([ "$built" = 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.check.outputs.build == 'true'
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: true
+
+      - name: Free disk space
+        if: steps.check.outputs.build == 'true'
+        run: ./build.sh free_disk
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.check.outputs.build == 'true'
+        with:
+          name: src
+          path: parts
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.check.outputs.build == 'true' && inputs.stage > 1
+        with:
+          name: out-${{ matrix.cpu }}-${{ steps.check.outputs.previous }}
+          path: parts/out
+
+      - name: Restore
+        if: steps.check.outputs.build == 'true'
+        run: |
+          cat parts/src.tar.zst.* | zstd -d | tar -x
+          if [ -d parts/out ]; then cat parts/out/out.tar.zst.* | zstd -d | tar -x -C chromium/src; fi
+          rm -rf parts
+          df -h /
+
+      - name: Build
+        id: build
+        if: steps.check.outputs.build == 'true'
+        run: |
+          ./build.sh deps
+          # Leave time to save the build tree before the job times out.
+          limit=$(( (${{ steps.check.outputs.start }} + 295 * 60 - $(date +%s)) / 60 ))
+          set +e
+          ./build.sh compile ${{ matrix.cpu }} ${limit}m
+          status=$?
+          set -e
+          df -h /
+          case $status in
+            0) echo "done=true" >> "$GITHUB_OUTPUT" ;;
+            124) echo "done=false" >> "$GITHUB_OUTPUT" ;;
+            *) exit $status ;;
+          esac
+
+      - name: Save
+        if: steps.build.outputs.done == 'false'
+        run: |
+          mkdir state
+          tar --format=posix -C chromium/src -cf - out/${{ matrix.cpu }} | zstd -T0 -3 | split -b 4G -d - state/out.tar.zst.
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.build.outputs.done == 'false'
+        with:
+          name: out-${{ matrix.cpu }}-${{ inputs.stage }}
+          path: state
+          compression-level: 0
+          retention-days: 3
+
+      - name: Sign
+        if: steps.build.outputs.done == 'true'
+        env:
+          LOCAL_TEST_JKS: ${{ secrets.LOCAL_TEST_JKS }}
+          STORE_TEST_JKS: ${{ secrets.STORE_TEST_JKS }}
+        run: ./build.sh sign
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.build.outputs.done == 'true'
+        with:
+          name: apk-${{ matrix.cpu }}
+          path: chromium/src/out/release
+          retention-days: 3

@@ -2,12 +2,6 @@ name: Build
 
 on:
   workflow_dispatch:
-    inputs:
-      runner:
-        description: 'Runner'
-        required: true
-        type: string
-        default: 'self-hosted' # ubuntu-latest
   push:
     branches: [main]
     paths-ignore:
@@ -24,22 +18,27 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
   id-token: write
   attestations: write
 
 jobs:
-  build:
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner || 'self-hosted' }}
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    outputs:
+      sha: ${{ steps.update.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
-      
-      - name: Update 
+
+      - name: Update
+        id: update
         run: |
           cd vanadium
           git fetch --tags
-          git checkout $(git tag | sort -V | tail -n1)
+          git checkout "$(git tag | sort -V | tail -n1)"
           cd ..
           git add vanadium
           git config --global user.name 'github-actions[bot]'
@@ -48,27 +47,106 @@ jobs:
             git commit -am "update"
             git push
           fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Set ENV
-        run: | 
-          chmod +x *.sh
-          echo "unix_time=$(date +%s)" >> $GITHUB_ENV
-    
-      - name: Build
-        env:
-            DEBIAN_FRONTEND: noninteractive
-            LOCAL_TEST_JKS: ${{ secrets.LOCAL_TEST_JKS }}
-            STORE_TEST_JKS: ${{ secrets.STORE_TEST_JKS }}
+      - name: Free disk space
+        run: ./build.sh free_disk
+
+      - name: Prepare
+        run: ./build.sh prepare
+
+      - name: Save
         run: |
-          ./build.sh
+          mkdir state
+          tar --format=posix -cf - chromium depot_tools | zstd -T0 -3 | split -b 4G -d - state/src.tar.zst.
+          df -h /
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: src
+          path: state
+          compression-level: 0
+          retention-days: 3
+
+  stage1:
+    needs: prepare
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 1
+    secrets: inherit
+
+  stage2:
+    needs: [prepare, stage1]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 2
+    secrets: inherit
+
+  stage3:
+    needs: [prepare, stage2]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 3
+    secrets: inherit
+
+  stage4:
+    needs: [prepare, stage3]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 4
+    secrets: inherit
+
+  stage5:
+    needs: [prepare, stage4]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 5
+    secrets: inherit
+
+  stage6:
+    needs: [prepare, stage5]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 6
+    secrets: inherit
+
+  stage7:
+    needs: [prepare, stage6]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 7
+    secrets: inherit
+
+  stage8:
+    needs: [prepare, stage7]
+    uses: ./.github/workflows/stage.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+      stage: 8
+    secrets: inherit
+
+  release:
+    needs: [prepare, stage8]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: apk-*
+          path: release
+          merge-multiple: true
 
       - name: Set
         run: |
-          export VERSION=$(find chromium/src/out/release -name '*arm64-v8a.apk' | sed 's/.*\///;s/\-arm64-v8a.apk$//')
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          mv $(find chromium/src/out/release -name '*arm64-v8a.aab') $VERSION-${{ env.unix_time }}-arm64-v8a.aab
-          mv $(find chromium/src/out/release -name '*arm64-v8a.apk') $VERSION-${{ env.unix_time }}-arm64-v8a.apk
-          mv $(find chromium/src/out/release -name '*armeabi-v7a.apk') $VERSION-${{ env.unix_time }}-armeabi-v7a.apk
+          ls -l release
+          test -f release/*-armeabi-v7a.apk && test -f release/*-arm64-v8a.apk && test -f release/*-arm64-v8a.aab
+          echo "VERSION=$(find release -name '*-arm64-v8a.apk' | sed 's/.*\///;s/-arm64-v8a.apk$//')" >> "$GITHUB_ENV"
 
       - name: Publish
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
@@ -76,15 +154,17 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: v${{ env.VERSION }}-${{ github.run_number }}
           tag_name: v${{ env.VERSION }}-${{ github.run_number }}
-          files: |
-            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.aab
-            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.apk
-            ${{ env.VERSION }}-${{ env.unix_time }}-armeabi-v7a.apk
+          target_commitish: ${{ needs.prepare.outputs.sha }}
+          files: release/*
 
       - name: Attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: |
-            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.aab
-            ${{ env.VERSION }}-${{ env.unix_time }}-arm64-v8a.apk
-            ${{ env.VERSION }}-${{ env.unix_time }}-armeabi-v7a.apk
+          subject-path: release/*
+
+      - name: Clean up
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --paginate --jq '.artifacts[] | select(.name | startswith("apk-") | not) | .id' |
+            xargs -r -I{} gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/{}"
