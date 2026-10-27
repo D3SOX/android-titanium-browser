@@ -8,6 +8,9 @@ This is a personal fork of [Titanium Browser for Android](https://github.com/jqs
 
 For the latest build, see [**Releases**](https://github.com/D3SOX/android-titanium-browser/releases/latest). Each release has one APK for arm64 devices. To get updates with [Obtainium](https://github.com/ImranR98/Obtainium), add `https://github.com/D3SOX/android-titanium-browser` and set the APK filter to `arm64-v8a\.apk$`.
 
+[<img height="48" alt="Get it on GitHub" src="https://jqssun.github.io/images/badges/github.svg">](https://github.com/D3SOX/android-titanium-browser/releases/latest)
+[<img height="48" alt="Get it on Obtainium" src=".github/badges/obtainium.png">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22io.github.jqssun.helium%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FD3SOX%2Fandroid-titanium-browser%22%2C%22author%22%3A%22D3SOX%22%2C%22name%22%3A%22Titanium%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22apkFilterRegEx%5C%22%3A%5C%22arm64-v8a%5C%5C%5C%5C.apk%24%5C%22%2C%5C%22versionDetection%5C%22%3Afalse%7D%22%7D)
+
 This fork signs its releases with its own key and keeps the package name `io.github.jqssun.helium`. An installed upstream build can't be updated with it. Uninstall the upstream build first, which deletes its data.
 
 <img alt="Titanium Browser for Android" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" />
