@@ -1,51 +1,58 @@
 # Titanium Browser for Android
 
-[![Stars](https://img.shields.io/github/stars/jqssun/android-titanium-browser?label=Stars&logo=GitHub)](https://github.com/jqssun/android-titanium-browser)
-[![GitHub](https://img.shields.io/github/downloads/jqssun/android-titanium-browser/total?label=GitHub&logo=GitHub)](https://github.com/jqssun/android-titanium-browser/releases)
-[![license](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://github.com/jqssun/android-titanium-browser/blob/main/LICENSE)
-[![build](https://img.shields.io/github/actions/workflow/status/jqssun/android-titanium-browser/build.yml)](https://github.com/jqssun/android-titanium-browser/actions/workflows/build.yml)
-[![release](https://img.shields.io/github/v/release/jqssun/android-titanium-browser)](https://github.com/jqssun/android-titanium-browser/releases)
+[![build](https://img.shields.io/github/actions/workflow/status/D3SOX/android-titanium-browser/build.yml)](https://github.com/D3SOX/android-titanium-browser/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/D3SOX/android-titanium-browser)](https://github.com/D3SOX/android-titanium-browser/releases)
+[![license](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://github.com/D3SOX/android-titanium-browser/blob/main/LICENSE)
 
-A secure and fully open-source, Chromium-based web browser with support for extensions, based on [Vanadium](https://github.com/GrapheneOS/Vanadium) by [GrapheneOS](https://github.com/GrapheneOS). This project was formerly known as [Helium Browser for Android](https://github.com/jqssun/android-helium-browser) but was later renamed to avoid branding confusion. To maintain a fast and native experience for everyone, advanced features are modularized into [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension).
+This is a personal fork of [Titanium Browser for Android](https://github.com/jqssun/android-titanium-browser) by [jqssun](https://github.com/jqssun). Titanium is a secure, fully open-source, Chromium-based web browser with support for extensions, based on [Vanadium](https://github.com/GrapheneOS/Vanadium) by [GrapheneOS](https://github.com/GrapheneOS). Advanced features live in the separate [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension).
 
-For the latest builds, see [**Releases**](https://github.com/jqssun/android-titanium-browser/releases/latest). You can also update between GitHub and Google Play releases seamlessly.
+For the latest build, see [**Releases**](https://github.com/D3SOX/android-titanium-browser/releases/latest). Each release has one APK for arm64 devices. To get updates with [Obtainium](https://github.com/ImranR98/Obtainium), add `https://github.com/D3SOX/android-titanium-browser` and set the APK filter to `arm64-v8a\.apk$`.
 
-[<img height="48" alt="Get it on Google Play" src="https://jqssun.github.io/images/badges/google-play-store.svg">](https://play.google.com/store/apps/details?id=io.github.jqssun.helium)
-[<img height="48" alt="Get it on GitHub" src="https://jqssun.github.io/images/badges/github.svg">](https://github.com/jqssun/android-titanium-browser/releases/latest)
+This fork signs its releases with its own key and keeps the package name `io.github.jqssun.helium`. An installed upstream build can't be updated with it. Uninstall the upstream build first, which deletes its data.
 
 <img alt="Titanium Browser for Android" src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" />
 
+## Changes from upstream
+
+- The new tab button in the tab switcher sits on the right, next to the menu button ([jqssun/android-titanium-browser#300](https://github.com/jqssun/android-titanium-browser/issues/300)).
+- Settings open each page in its own activity, as in older Chromium versions. Going back returns to the previous page at the same scroll position, and pages no longer jump when the settings search bar hides.
+- **Apply dark theme to sites, when possible** under **Settings** > **Appearance** > **Theme** is available and on by default.
+- The build adds a missing dependency on the generated omnibox `vector_icons.h` header, which otherwise fails to compile at random.
+- Releases contain only the arm64 APK. There is no armeabi-v7a APK and no App Bundle.
+- GitHub Actions merges upstream, updates Vanadium to its latest tag and builds a release every Monday, and also builds on every push to `main`. Each release gets its own tag so that Obtainium sees every build as an update.
+- A full build takes longer than the 6-hour limit of a GitHub-hosted runner, so it runs in chained stages that pass the build output to the next stage. The build uses ninja instead of siso and leaves out debug symbols (`symbol_level = 0`) to fit the runners' disk and memory.
+
 ## Usage
 
-### Installing Extensions
+### Installing extensions
 
 You can install extensions from the following sources:
 - [Chrome Web Store (Recommended)](https://chromewebstore.google.com/)
 - [Opera Add-ons](https://addons.opera.com/)
 - [Microsoft Edge Add-ons](https://microsoftedge.microsoft.com/addons/)
 
-You can also install from local CRX (or ZIP) file in the options page of the built-in [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension). 
+You can also install from a local CRX (or ZIP) file in the options page of the built-in [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension).
 
-Additionally, you can load an unpacked extension manually for testing purposes by navigating to [`chrome://extensions`](chrome://extensions). Enable **Developer mode**, select **Load unpacked**, and choose the folder containing the extension in the Storage Access Framework (SAF) picker. It may take a moment for the extension to load.
+To test an unpacked extension, open [`chrome://extensions`](chrome://extensions), turn on **Developer mode**, select **Load unpacked**, and choose the folder that contains the extension in the Storage Access Framework (SAF) picker. The extension may take a moment to load.
 
-### Using Extensions
+### Using extensions
 
-To run an extension in Incognito (OTR) mode, go to **Manage extensions**, find the extension you want to use in Incognito mode, select **Details**, and turn on **Allow in Incognito**.
+To run an extension in Incognito (OTR) mode, go to **Manage extensions**, find the extension, select **Details**, and turn on **Allow in Incognito**.
 
-For advanced features including external download manager, enhanced dark mode, and additional privacy options, you can use the built-in [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension).
+The built-in [**Titanium Extension for Android**](https://github.com/jqssun/android-titanium-extension) adds an external download manager, enhanced dark mode, and more privacy options.
 
 ### Debug URLs
 
 To view and access the debug URLs, use [`chrome://chrome-urls`](chrome://chrome-urls). For **Experiments**, use [`chrome://flags`](chrome://flags).
 
-### WebRTC IP Policy
+### WebRTC IP policy
 
-The option is available by using the menu button <kbd>⋮</kbd> in the top right corner, then selecting **Settings**, **Privacy and security**. If you experience issues with WebRTC due to IPs being shielded by default (e.g. [Discord Voice](https://discord.com/blog/how-discord-handles-two-and-half-million-concurrent-voice-users-using-webrtc)), try changing it to **Default public interface only**, or **Default**.
+Open the menu <kbd>⋮</kbd> in the top right corner, then select **Settings** > **Privacy and security**. Titanium shields IPs from WebRTC by default. If a WebRTC service such as [Discord Voice](https://discord.com/blog/how-discord-handles-two-and-half-million-concurrent-voice-users-using-webrtc) doesn't work, change the policy to **Default public interface only** or **Default**.
 
 ## Implementation
 
 > [!WARNING]
-> [Titanium Browser for Android](#titanium-browser-for-android) only attempts to improve security and privacy where possible. For better protection on Android, you should instead use [GrapheneOS](https://grapheneos.org) with [Vanadium](https://vanadium.app), which additionally integrates patches into Android System WebView and provides significant kernel and memory management hardening on the OS level.
+> Titanium only tries to improve security and privacy where possible. For better protection on Android, use [GrapheneOS](https://grapheneos.org) with [Vanadium](https://vanadium.app). Vanadium also patches the Android System WebView, and GrapheneOS hardens the kernel and memory management at the OS level.
 
 ```mermaid
 ---
@@ -88,18 +95,14 @@ flowchart TD
     style n7 stroke:#FF6D00
 ```
 
-## Building
+## Verifying releases
 
-All releases are built using [Actions](https://github.com/jqssun/android-titanium-browser/actions). Current releases can also be attested using [GitHub CLI](https://github.com/cli/cli).
+[GitHub Actions](https://github.com/D3SOX/android-titanium-browser/actions) builds every release and attests its build provenance. Check an APK with the [GitHub CLI](https://github.com/cli/cli):
 
 ```shell
-gh attestation verify *.apk -R jqssun/android-titanium-browser
+gh attestation verify *.apk -R D3SOX/android-titanium-browser
 ```
-
-This repository provides the build script to compile on the latest Ubuntu, and may also work with other Linux distributions.
-
-To build these releases yourself via CI (e.g. GitHub Actions), fork this repository. Supply your `base64` encoded `keystore.jks` and `local.properties` (containing `keyAlias`, `keyPassword` and `storePassword`) to [**Repository secrets**](https://github.com/jqssun/android-titanium-browser/blob/main/.github/workflows/build.yml#L49-L50) under **Settings** > **Secrets and variables** > **Actions**. To generate a release, go to **Actions**, select **Build**, and select **Run workflow**. Under **Runner**, you can either use a GitHub-hosted runner by entering `ubuntu-latest`, or `self-hosted` for your own hardware.
 
 ## Credits
 
-This project would not have been possible without the huge community contributions from [Vanadium](https://github.com/GrapheneOS/Vanadium), and without the privacy-focused, open-source approach shared by various other Chromium projects. All credit goes to the original authors and contributors. This project started around the same time as [Helium Browser for Linux](https://github.com/imputnet/helium-linux) but it is not affiliated with the desktop Helium project.
+Titanium is the work of [jqssun](https://github.com/jqssun), and builds on [Vanadium](https://github.com/GrapheneOS/Vanadium) and the privacy-focused, open-source approach of other Chromium projects. All credit goes to the original authors and contributors. Titanium started around the same time as [Helium Browser for Linux](https://github.com/imputnet/helium-linux) but isn't affiliated with the desktop Helium project.
