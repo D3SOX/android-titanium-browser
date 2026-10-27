@@ -46,6 +46,7 @@ feature_overrides.EnableFeature(chrome::android::kChromeNativeUrlOverriding);\
 #if 0
 d}' chrome/browser/chrome_browser_field_trials.cc
 sed -i '/^bool ShouldFallbackToSWIfGLES3NotSupported() {$/,/^}$/ s|^  return true;$|  return false;|' ui/gl/gl_features.cc # virt
+sed -i '/^BASE_FEATURE(kDarkenWebsitesCheckboxInThemesSetting,$/{n;s|base::FEATURE_DISABLED_BY_DEFAULT|base::FEATURE_ENABLED_BY_DEFAULT|}' components/content_settings/core/common/features.cc # dark websites
 
 # accessibility
 sed -i 's|ChromeAccessibilityUtil.get().isAccessibilityEnabled()|org.chromium.ui.accessibility.AccessibilityState.isComplexUserInteractionServiceEnabled() \|\| org.chromium.ui.accessibility.AccessibilityState.isTouchExplorationEnabled()|' chrome/android/java/src/org/chromium/chrome/browser/tab/TabStateBrowserControlsVisibilityDelegate.java
