@@ -10,7 +10,7 @@ on:
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/dependabot.yml'
   schedule:
-    - cron: '0 0 */16 * *'
+    - cron: '0 3 * * 1' # weekly, Monday 03:00 UTC
 
 concurrency:
   group: build
@@ -32,21 +32,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
+          fetch-depth: 0
 
       - name: Update
         id: update
         run: |
-          cd vanadium
-          git fetch --tags
-          git checkout "$(git tag | sort -V | tail -n1)"
-          cd ..
-          git add vanadium
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          if ! git diff --staged --quiet; then
-            git commit -am "update"
-            git push
+          git -C vanadium fetch --tags
+          latest="$(git -C vanadium tag | sort -V | tail -n1)"
+          git fetch https://github.com/jqssun/android-titanium-browser.git main
+          if ! git merge --no-edit FETCH_HEAD; then
+            # Only a Vanadium submodule conflict is resolved automatically, by taking the latest tag.
+            [ "$(git diff --name-only --diff-filter=U)" = vanadium ] || exit 1
+            git -C vanadium checkout "$latest"
+            git add vanadium
+            git commit --no-edit
           fi
+          git -C vanadium checkout "$latest"
+          git add vanadium
+          if ! git diff --staged --quiet; then
+            git commit -m "update"
+          fi
+          git push
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Free disk space
