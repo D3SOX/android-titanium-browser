@@ -157,6 +157,7 @@ sed -i 's|^  "app": {$|&\n    "platforms": ["chromeos", "linux", "mac", "win"],|
 # desktop: omnibox
 sed -i 's/is_desktop_android = !!BUILDFLAG(IS_DESKTOP_ANDROID);/is_desktop_android = false;/' components/omnibox/browser/zero_suggest_verbatim_match_provider.cc
 sed -i 's/is_android_mobile = is_android_any \&\& !is_android_desktop;/is_android_mobile = is_android_any \&\& is_android_desktop;/' components/omnibox/browser/autocomplete_result.cc
+sed -i '/^static_library("browser") {$/,/^}$/ s/if ((!is_android || enable_vr) \&\& !is_ios) {/if (!is_ios) {/' components/omnibox/browser/BUILD.gn # searchbox_utils.cc includes the generated vector_icons.h
 # sed -i 's|OmniboxCapabilities.hasDesktopExperience(context)|true|g' chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/FuseboxSessionState.java
 
 # desktop: menu
