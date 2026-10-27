@@ -170,8 +170,13 @@ sed -i 's|if (id == R.id.manage_all_windows_menu_id) {|if (id == R.id.incognito_
 # hub: new tab button on the right
 sed -n '/<Button$/,/\/>/p' chrome/browser/hub/internal/android/res/layout/hub_toolbar_layout.xml | sed -i -e '/<Button$/,/\/>/d' -e '/<!-- On tablets, the searchbox/r /dev/stdin' chrome/browser/hub/internal/android/res/layout/hub_toolbar_layout.xml
 
-# settings: toggle search box without animation
+# settings: one activity per page, so going back keeps the previous page and its scroll position
+sed -i -E 's/^BASE_FEATURE\(kSettings(MultiColumn|SingleActivity), base::FEATURE_ENABLED_BY_DEFAULT\);$/BASE_FEATURE(kSettings\1, base::FEATURE_DISABLED_BY_DEFAULT);/' chrome/browser/flags/android/chrome_feature_list.cc
+sed -i -E 's|newCachedFlag\(SETTINGS_(MULTI_COLUMN\|SINGLE_ACTIVITY), /\* defaultValue= \*/ true\)|newCachedFlag(SETTINGS_\1, /* defaultValue= */ false)|' chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+
+# settings: toggle search box without animation, before the page is first drawn
 sed -i 's|TransitionManager.beginDelayedTransition(parentView, transition);|searchBox.setOnClickListener(v -> onClickSearchBox(v)); updateSearchUiWidth();|' chrome/android/java/src/org/chromium/chrome/browser/settings/search/SettingsSearchCoordinator.java
+sed -i '/private void observeFragmentForVisibilityChange() {/,/updateSearchUiWidth();/ s|new FragmentManager.FragmentLifecycleCallbacks() {|& @Override public void onFragmentViewCreated(FragmentManager fm, Fragment f, View v, @Nullable Bundle savedInstanceState) { View searchBox = requireViewById(R.id.search_box); if (f instanceof MainSettings) { if (searchBox.getVisibility() != View.VISIBLE) showUiInSingleColumn(searchBox, true); } else if (f instanceof PreferenceFragmentCompat) { showUiInSingleColumn(searchBox, false); } }|' chrome/android/java/src/org/chromium/chrome/browser/settings/search/SettingsSearchCoordinator.java
 
 # crbug.com/406136787: load unpacked
 sed -i 's|assert treeId.equals(documentId);|&\n if ("com.android.externalstorage.documents".equals(mAuthority)) { String fastId = mRelativePath.isEmpty() ? treeId : (treeId.endsWith(":") ? treeId + mRelativePath : treeId + "/" + mRelativePath); Uri fast = DocumentsContract.buildDocumentUriUsingTree(tree, fastId); return contentUriExists(fast) ? fast : null; }|' base/android/java/src/org/chromium/base/VirtualDocumentPath.java
