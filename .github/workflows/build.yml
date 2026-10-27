@@ -153,12 +153,12 @@ jobs:
           name: v${{ env.VERSION }}-${{ github.run_number }}
           tag_name: v${{ env.VERSION }}-${{ github.run_number }}
           target_commitish: ${{ needs.prepare.outputs.sha }}
-          files: release/*
+          files: release/*.apk
 
       - name: Attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: release/*
+          subject-path: release/*.apk
 
       - name: Clean up
         env:
