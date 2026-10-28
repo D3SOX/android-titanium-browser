@@ -9,7 +9,6 @@ on:
       - 'fastlane/**'
       - '.github/ISSUE_TEMPLATE/**'
       - '.github/dependabot.yml'
-      - '.github/badges/**'
   schedule:
     - cron: '0 3 * * 1' # weekly, Monday 03:00 UTC
 
