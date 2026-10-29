@@ -11,7 +11,7 @@ on:
       - '.github/dependabot.yml'
       - '.github/badges/**'
   schedule:
-    - cron: '0 3 * * 1' # weekly, Monday 03:00 UTC
+    - cron: '0 3 */2 * *' # every two days, 03:00 UTC
 
 concurrency:
   group: build
@@ -29,6 +29,7 @@ jobs:
     timeout-minutes: 355
     outputs:
       sha: ${{ steps.update.outputs.sha }}
+      build: ${{ steps.update.outputs.build }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,20 +58,32 @@ jobs:
           fi
           git push
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # Scheduled runs only build when something besides docs and CI changed since the last release.
+          last="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ -n "$last" ] &&
+            git diff --quiet "$last" HEAD -- . ':!README.md' ':!fastlane' ':!.github'; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Free disk space
+        if: steps.update.outputs.build == 'true'
         run: ./build.sh free_disk
 
       - name: Prepare
+        if: steps.update.outputs.build == 'true'
         run: ./build.sh prepare
 
       - name: Save
+        if: steps.update.outputs.build == 'true'
         run: |
           mkdir state
           tar --format=posix -cf - chromium depot_tools | zstd -T0 -3 | split -b 4G -d - state/src.tar.zst.
           df -h /
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.update.outputs.build == 'true'
         with:
           name: src
           path: state
@@ -79,6 +92,7 @@ jobs:
 
   stage1:
     needs: prepare
+    if: needs.prepare.outputs.build == 'true'
     uses: ./.github/workflows/stage.yml
     with:
       ref: ${{ needs.prepare.outputs.sha }}

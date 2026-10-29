@@ -22,7 +22,7 @@ This fork signs its releases with its own key and keeps the package name `io.git
 - **Apply dark theme to sites, when possible** under **Settings** > **Appearance** > **Theme** is available and on by default.
 - The build adds a missing dependency on the generated omnibox `vector_icons.h` header, which otherwise fails to compile at random.
 - Releases contain only the arm64 APK. There is no armeabi-v7a APK and no App Bundle.
-- GitHub Actions merges upstream, updates Vanadium to its latest tag and builds a release every Monday, and also builds on every push to `main`. Each release gets its own tag so that Obtainium sees every build as an update.
+- Every two days, GitHub Actions merges upstream and updates Vanadium to its latest tag, and builds a release if that changed anything. It also builds on every push to `main`. Each release gets its own tag so that Obtainium sees every build as an update.
 - A full build takes longer than the 6-hour limit of a GitHub-hosted runner, so it runs in chained stages that pass the build output to the next stage. The build uses ninja instead of siso and leaves out debug symbols (`symbol_level = 0`) to fit the runners' disk and memory.
 
 ## Usage
