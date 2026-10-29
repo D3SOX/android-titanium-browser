@@ -17,16 +17,9 @@ This fork signs its releases with its own key and keeps the package name `io.git
 
 ## Changes from upstream
 
-- The new tab button in the tab switcher sits on the right, next to the menu button ([jqssun/android-titanium-browser#300](https://github.com/jqssun/android-titanium-browser/issues/300)).
-
+- The new tab button in the tab switcher sits on the right, next to the menu button ([jqssun/android-titanium-browser#300](https://github.com/jqssun/android-titanium-browser/issues/300)).<br>
   <img width="504" alt="Tab switcher toolbar with the new tab button on the right" src="https://raw.githubusercontent.com/D3SOX/android-titanium-browser/pr-assets/tab-switcher-toolbar.png">
-
-- Settings open each page in its own activity, as in older Chromium versions. Going back returns to the previous page at the same scroll position, and pages no longer jump when the settings search bar hides.
-
-  | Upstream | This fork |
-  | --- | --- |
-  | ![Upstream: the search bar hides with a jump and Site settings returns to the top](https://raw.githubusercontent.com/D3SOX/android-titanium-browser/pr-assets/settings-before.gif) | ![This fork: no search bar jump, and Site settings keeps its scroll position](https://raw.githubusercontent.com/D3SOX/android-titanium-browser/pr-assets/settings-after.gif) |
-
+- Settings open each page in its own activity, as in older Chromium versions. Going back returns to the previous page at the same scroll position, and pages no longer jump when the settings search bar hides.<br><table><tr><th>Upstream</th><th>This fork</th></tr><tr><td><img alt="Upstream: the search bar hides with a jump and Site settings returns to the top" src="https://raw.githubusercontent.com/D3SOX/android-titanium-browser/pr-assets/settings-before.gif"></td><td><img alt="This fork: no search bar jump, and Site settings keeps its scroll position" src="https://raw.githubusercontent.com/D3SOX/android-titanium-browser/pr-assets/settings-after.gif"></td></tr></table>
 - **Apply dark theme to sites, when possible** under **Settings** > **Appearance** > **Theme** is available and on by default.
 - The build adds a missing dependency on the generated omnibox `vector_icons.h` header, which otherwise fails to compile at random.
 - Releases contain only the arm64 APK. There is no armeabi-v7a APK and no App Bundle.
