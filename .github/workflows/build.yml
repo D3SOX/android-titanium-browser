@@ -41,6 +41,8 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # A queued run may start after newer commits landed on main, so build the latest main.
+          git pull --ff-only origin main
           git -C vanadium fetch --tags
           latest="$(git -C vanadium tag | sort -V | tail -n1)"
           git fetch https://github.com/jqssun/android-titanium-browser.git main
