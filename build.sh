@@ -52,7 +52,7 @@ compile() {
         cp $SCRIPT_DIR/args.gn out/Default/args.gn
         gn gen out/Default # gn args out/Default; echo 'treat_warnings_as_errors = false' >> out/Default/args.gn
     fi
-    ${1:+timeout -s INT -k 10m $1} third_party/ninja/ninja -C out/Default chrome_public_apk
+    ${1:+timeout -s INT -k 10m $1} nice -n 10 third_party/ninja/ninja -j "$(nproc)" -C out/Default chrome_public_apk
 }
 
 sign() {
